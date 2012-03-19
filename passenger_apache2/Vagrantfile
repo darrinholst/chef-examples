@@ -1,0 +1,15 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant::Config.run do |config|
+  config.vm.box = "lucid64"
+
+  config.vm.customize do |vm|
+    vm.memory_size = 2048
+    vm.cpus = 8
+  end
+
+  config.vm.network :hostonly, "192.168.51.50"
+  config.vm.share_folder "cwd", "/opt/chef", "."
+  config.vm.provision :shell, :path => "vagrant-provision.sh"
+end
