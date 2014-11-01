@@ -1,0 +1,18 @@
+{
+  "name": "base",
+  "description": "base role",
+  "json_class": "Chef::Role",
+  "default_attributes": {
+    "ruby_build": {
+      "upgrade": true
+    }
+  },
+  "override_attributes": {
+  },
+  "chef_type": "role",
+  "run_list": [
+    "recipe[git]"
+  ],
+  "env_run_lists": {
+  }
+}
