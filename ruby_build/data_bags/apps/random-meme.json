@@ -1,0 +1,16 @@
+{
+  "id": "random-meme",
+  "environment": "production",
+  "repository": "https://github.com/dholst/random-meme.git",
+  "revision": "master",
+  "action": "deploy",
+  "ssl_enabled": false,
+  "server_names": [
+    "random-meme.darrinholst.com"
+  ],
+  "environment_variables": {
+    "DATABASE_PASSWORD": "saaah cure",
+    "DATABASE_NAME": "random-meme",
+    "DATABASE_USERNAME": "random-meme"
+  }
+}

@@ -1,17 +1,21 @@
 {
-  "name": "base",
-  "description": "base role",
+  "name": "web",
+  "description": "web role",
   "json_class": "Chef::Role",
   "default_attributes": {
     "ruby_build": {
       "upgrade": true
+    },
+    "rails_app": {
+      "data_bag": "apps"
     }
   },
   "override_attributes": {
   },
   "chef_type": "role",
   "run_list": [
-    "recipe[git]"
+    "recipe[git]",
+    "recipe[rails_app::data_bag]"
   ],
   "env_run_lists": {
   }

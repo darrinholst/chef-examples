@@ -18,6 +18,11 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.provision 'chef_solo' do |chef|
     chef.custom_config_path = 'Vagrantfile.chef'
     chef.roles_path = 'roles'
-    chef.add_role 'base'
+    chef.data_bags_path = 'data_bags'
+    chef.add_role 'web'
+    chef.json = {
+      is_vagrant: true,
+      postgresql: {password: {postgres: 'password'}}
+    }
   end
 end
