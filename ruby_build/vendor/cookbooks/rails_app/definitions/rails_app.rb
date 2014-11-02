@@ -6,6 +6,8 @@ define :rails_app do
   app_name = "#{params[:name]}-#{env}"
   home_dir = "/home/#{app_name}"
   environment_variables = params[:environment_variables]
+  server_names = [params[:server_names]].flatten
+  use_ssl = node["is_vagrant"] ? false : params[:ssl_enabled] || false
 
   #-----------------------------------------------------------------------------------
   # dependencies
@@ -80,6 +82,25 @@ define :rails_app do
   service "#{app_name}" do
     action :enable
     supports [:start, :restart, :stop]
+  end
+
+  #-----------------------------------------------------------------------------------
+  # nginx config
+  #-----------------------------------------------------------------------------------
+  template "/etc/nginx/sites-available/#{app_name}" do
+    source "nginx.conf.erb"
+    mode 0644
+    variables(
+      :name => app_name,
+      :server_names => server_names,
+      :ssl_enabled => use_ssl,
+    )
+  end
+
+  nginx_site app_name
+
+  nginx_site "default" do
+    enable false
   end
 end
 

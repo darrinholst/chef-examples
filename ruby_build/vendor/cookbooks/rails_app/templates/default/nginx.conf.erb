@@ -1,0 +1,60 @@
+upstream <%= @name %> {
+    server unix:/var/www/<%= @name %>/current/tmp/sockets/unicorn.sock;
+}
+
+<% if @ssl_enabled %>
+server {
+    listen 80;
+    <% @server_names.each do |server_name| %>
+    server_name  <%= server_name %>;
+    <% end %>
+    rewrite ^(.*) https://$host$1 permanent;
+}
+<% end %>
+
+server {
+    listen <%= @ssl_enabled ? "443 ssl" : "80" %>;
+    <% if @ssl_enabled %>
+    ssl_certificate /etc/ssl/<%= @server_names.first %>.crt;
+    ssl_certificate_key /etc/ssl/<%= @server_names.first %>.key;
+    <% end %>
+    <% @server_names.each do |server_name| %>
+    server_name  <%= server_name %>;
+    <% end %>
+    gzip_static on;
+    client_max_body_size 500M;
+
+    # path for static files
+    root /var/www/<%= @name %>/current/public;
+
+    # Prefer to serve static files directly from nginx to avoid unnecessary
+    # data copies from the application server.
+    try_files /cache$uri/index.html /cache$uri.html /cache$uri $uri/index.html $uri.html $uri @app;
+
+    location @app {
+        # an HTTP header important enough to have its own Wikipedia entry:
+        #   http://en.wikipedia.org/wiki/X-Forwarded-For
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+        # enable this if and only if you use HTTPS, this helps Rack
+        # set the proper protocol for doing redirects:
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # pass the Host: header from the client right along so redirects
+        # can be set properly within the Rack application
+        proxy_set_header Host $http_host;
+
+        # we don't want nginx trying to do something clever with
+        # redirects, we set the Host: header above already.
+        proxy_redirect off;
+
+        proxy_pass http://<%= @name %>;
+    }
+
+    # redirect server error pages to the static page /50x.html
+    error_page   500 502 503 504  /500.html;
+    location = /500.html {
+        root   /var/www/<%= @name %>/current/public;
+    }
+}
+
