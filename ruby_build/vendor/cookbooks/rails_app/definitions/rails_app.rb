@@ -5,6 +5,7 @@ define :rails_app do
   env = params[:environment]
   app_name = "#{params[:name]}-#{env}"
   home_dir = "/home/#{app_name}"
+  environment_variables = params[:environment_variables]
 
   #-----------------------------------------------------------------------------------
   # dependencies
@@ -59,6 +60,26 @@ define :rails_app do
       owner app_name
       group app_name
     end
+  end
+
+  #-----------------------------------------------------------------------------------
+  # setup the unicorns
+  #-----------------------------------------------------------------------------------
+  template "/etc/init.d/#{app_name}" do
+    source "unicorn.erb"
+    owner "root"
+    group "root"
+    mode 0700
+    variables(
+      :environment => env,
+      :name => app_name,
+      :environment_variables => environment_variables.merge({"LOG_FILE" => "/var/log/www/#{app_name}.application.log"})
+    )
+  end
+
+  service "#{app_name}" do
+    action :enable
+    supports [:start, :restart, :stop]
   end
 end
 
