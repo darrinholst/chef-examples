@@ -39,5 +39,26 @@ define :rails_app do
       mode "0600"
     end
   end
+
+  #-----------------------------------------------------------------------------------
+  # source and log directory setup
+  #-----------------------------------------------------------------------------------
+  directory "/var/www/#{app_name}" do
+    owner app_name
+    group app_name
+    recursive true
+  end
+
+  directory "/var/log/www"
+
+  log_files = %w{chef application stdout stderr}
+  log_files << 'delayed_job' if params[:delayed_job]
+  log_files.each do |log|
+    file "/var/log/www/#{app_name}.#{log}.log" do
+      action :create_if_missing
+      owner app_name
+      group app_name
+    end
+  end
 end
 
