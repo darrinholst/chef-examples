@@ -1,5 +1,6 @@
 {
-  "id": "random-meme",
+  "id": "random-meme-production",
+  "name": "random-meme",
   "environment": "production",
   "repository": "https://github.com/dholst/random-meme.git",
   "revision": "master",

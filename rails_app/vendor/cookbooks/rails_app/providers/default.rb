@@ -18,7 +18,7 @@ def environment_name
 end
 
 def app_name
-  "#{new_resource.id}-#{environment_name}"
+  "#{new_resource.name}-#{environment_name}"
 end
 
 def repo
@@ -38,10 +38,9 @@ def ruby_home
   "#{node['ruby_build']['default_ruby_base_path']}/#{ruby_version}"
 end
 
-def environment_variables(log_to = 'application')
+def environment_variables
   new_resource.environment_variables.merge({
     "BUNDLE_GEMFILE" => "/var/www/#{app_name}/current/Gemfile",
-    "LOG_FILE" => "/var/log/www/#{app_name}.#{log_to}.log",
     "PATH" => "#{ruby_home}/bin:/usr/local/bin:/usr/bin:/bin"
   })
 end
@@ -128,7 +127,7 @@ end
 
 def create_unicorn_config
   provider = self
-  environment_variables = environment_variables('application')
+  environment_variables = provider.environment_variables
 
   template "/etc/init.d/#{provider.app_name}" do
     source "unicorn.erb"
@@ -243,7 +242,8 @@ end
 
 def configure_delayed_job
   provider = self
-  environment_variables = environment_variables('delayed_job')
+  environment_variables = provider.environment_variables
+  log_to = "/var/log/www/#{provider.app_name}.delayed_job.log"
 
   if provider.delayed_job?
     template "/etc/monit/conf.d/delayed_job.#{provider.app_name}.conf" do
@@ -256,7 +256,8 @@ def configure_delayed_job
         :env => provider.environment_name,
         :worker_count => provider.delayed_job_worker_count,
         :worker_name => "#{provider.app_name}_delayed_job",
-        :environment_variables => environment_variables
+        :environment_variables => environment_variables,
+        :log_to => log_to
       })
       notifies :restart, "service[monit]"
     end
@@ -267,7 +268,8 @@ def deploy_it
   provider = self
   deploy_to = "/var/www/#{provider.app_name}"
   shared_dir = "#{deploy_to}/shared"
-  environment_variables = environment_variables('chef')
+  environment_variables = provider.environment_variables
+  log_to = "/var/log/www/#{provider.app_name}.chef.log"
 
   directory shared_dir do
     owner provider.app_name
@@ -319,28 +321,31 @@ def deploy_it
         gem_binary "#{provider.ruby_home}/bin/gem"
       end
 
-      execute "bundle install --path #{deploy_to}/shared/bundle --deployment --without development test" do
+      execute "bundle install" do
         cwd release_path
         user provider.app_name
         environment environment_variables
+        command "bundle install --path #{deploy_to}/shared/bundle --deployment --without development test"
       end
 
-      execute "bundle exec rake RAILS_ENV=#{provider.environment_name} RAILS_GROUPS=assets assets:precompile:primary" do
+      execute "precompile assets" do
         cwd release_path
         user provider.app_name
         environment environment_variables
+        command "bundle exec rake RAILS_ENV=#{provider.environment_name} RAILS_GROUPS=assets assets:precompile:primary"
       end
 
-      execute "bundle exec rake RAILS_ENV=#{provider.environment_name} db:migrate db:seed --trace" do
+      execute "migrate and seed db" do
         cwd release_path
         user provider.app_name
         environment environment_variables
+        command "bundle exec rake RAILS_ENV=#{provider.environment_name} db:migrate db:seed --trace"
       end
     end
 
     restart_command do
-      execute "/etc/init.d/#{provider.app_name} restart" do
-      end
+      #TODO: need to stop and start if ruby version changed or environment variables changed
+      execute "/etc/init.d/#{provider.app_name} restart"
     end
 
     after_restart do
@@ -358,7 +363,7 @@ def deploy_it
       ruby_block "check deployed version" do
         block do
           all_output = `curl -kvH 'Host: #{provider.server_names.first}' http#{provider.ssl? ? 's' : ''}://localhost/version 2>&1`
-          deployed_version = `curl -kH 'Host: #{provider.server_names.first}' http#{provider.ssl? ? 's' : ''}://localhost/version`
+          deployed_version = `curl -kH 'Host: #{provider.server_names.first}' http#{provider.ssl? ? 's' : ''}://localhost/version 2> /dev/null`
           raise "Deployed version #{release_slug}, but #{deployed_version} was returned\n#{all_output}" unless deployed_version.match(release_slug)
         end
       end

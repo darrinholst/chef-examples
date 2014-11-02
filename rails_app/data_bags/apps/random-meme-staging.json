@@ -1,0 +1,18 @@
+{
+  "id": "random-meme-staging",
+  "name": "random-meme",
+  "environment": "staging",
+  "repository": "https://github.com/dholst/random-meme.git",
+  "revision": "master",
+  "action": "deploy",
+  "ruby_version": "2.1.3",
+  "ssl_enabled": false,
+  "server_names": [
+    "random-meme-staging.darrinholst.com"
+  ],
+  "environment_variables": {
+    "DATABASE_PASSWORD": "shhhh, Its the staging password",
+    "DATABASE_NAME": "random-meme-staging",
+    "DATABASE_USERNAME": "random-meme-staging"
+  }
+}

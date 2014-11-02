@@ -8,7 +8,7 @@ end
 apps.each do |app, config|
   rails_app app do
     config.each do |k, v|
-      send(k, v)
+      send(k, v) unless k == 'id'
     end
   end
 end

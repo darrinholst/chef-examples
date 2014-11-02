@@ -1,7 +1,7 @@
 actions :deploy
 default_action :deploy
 
-attribute :id,                    :kind_of => String, :name_attribute => true, :required => true
+attribute :name,                  :kind_of => String, :required => true
 attribute :environment,           :kind_of => String, :required => true
 attribute :repository,            :kind_of => String, :required => true
 attribute :revision,              :kind_of => String, :required => true
