@@ -6,7 +6,11 @@ define :rails_app do
   app_name = "#{params[:name]}-#{env}"
   home_dir = "/home/#{app_name}"
   environment_variables = params[:environment_variables]
+  database_name = environment_variables["DATABASE_NAME"]
+  database_username = environment_variables["DATABASE_USERNAME"]
+  database_password = environment_variables["DATABASE_PASSWORD"]
   server_names = [params[:server_names]].flatten
+  primary_server_name = server_names.first
   use_ssl = node["is_vagrant"] ? false : params[:ssl_enabled] || false
 
   #-----------------------------------------------------------------------------------
@@ -101,6 +105,50 @@ define :rails_app do
 
   nginx_site "default" do
     enable false
+  end
+
+  #---------------------------------------------------------------------
+  # database setup
+  #---------------------------------------------------------------------
+  execute "create-database-user" do
+    user "postgres"
+    command "createuser -U postgres -SDRw #{database_username}"
+    not_if "psql -tAc \"SELECT 1 FROM pg_roles WHERE rolname='#{database_username}'\"|grep -q 1", :user => "postgres"
+  end
+
+  execute "set-database-user-password" do
+    user "postgres"
+    command %{psql postgres -tAc "ALTER USER \\"#{database_username}\\" WITH PASSWORD '#{database_password}'"}
+  end
+
+  execute "create-database" do
+    user 'postgres'
+    command "createdb -U postgres -O #{database_username} -E utf8 -l 'en_US.utf8' -T template0 #{database_name}"
+    not_if "psql --list | grep -q #{database_name}", :user => "postgres"
+  end
+
+  #---------------------------------------------------------------------
+  # database backup
+  #---------------------------------------------------------------------
+  cookbook_file "/usr/bin/aws" do
+    source "aws"
+    mode 0755
+  end
+
+  cookbook_file "/root/.awssecret" do
+    source "awssecret"
+    mode 0600
+  end
+
+  cookbook_file "/usr/local/bin/backup-postgres" do
+    source "backup-postgres"
+    mode 0755
+  end
+
+  cron "database backup" do
+    hour 0
+    minute 0
+    command "/usr/local/bin/backup-postgres -f #{app_name}.dump -d #{database_name} -u #{database_username} -w #{database_password} -t '#{primary_server_name}' -k 365"
   end
 end
 
