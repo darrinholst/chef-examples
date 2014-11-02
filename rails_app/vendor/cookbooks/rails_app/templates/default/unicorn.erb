@@ -78,9 +78,6 @@ OLD_PID="$PID.oldbin"
 
 cd $RAILS_ROOT || exit 1
 
-PATH=/usr/local/bin:$PATH
 CMD="bundle exec unicorn_rails -c $RAILS_ROOT/config/unicorn.rb -E $RAILS_ENV -D"
-
 cmd $1
-
 

@@ -31,6 +31,7 @@ SITE
       build-essential (>= 0.0.0)
       openssl (>= 0.0.0)
     rsyslog (1.12.2)
+    ruby_build (0.8.0)
     runit (1.5.10)
       build-essential (>= 0.0.0)
       yum (~> 3.0)
@@ -48,6 +49,7 @@ PATH
       monit (>= 0.0.0)
       nginx (>= 0.0.0)
       postgresql (>= 0.0.0)
+      ruby_build (>= 0.0.0)
 
 DEPENDENCIES
   git (>= 0)

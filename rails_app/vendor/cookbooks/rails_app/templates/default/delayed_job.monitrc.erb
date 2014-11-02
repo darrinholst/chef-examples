@@ -1,7 +1,7 @@
 <% @worker_count.times do |i| %>
 check process <%= "#{@worker_name}_#{i}" %>
   with pidfile /var/www/<%= @app_name %>/shared/pids/delayed_job.<%= i %>.pid
-  start program = "/usr/bin/env PATH=/usr/local/bin:/usr/bin:$PATH RAILS_ENV=<%= @env %> <% @environment_variables.each do |k, v| %><%= "#{k}=#{v} " %><% end %> LOG_FILE=/var/log/www/<%= @app_name %>.delayed_job.log /bin/bash -c 'cd /var/www/<%= @app_name %>/current && script/delayed_job start -i <%= i %>'"
-  stop program = "/usr/bin/env PATH=/usr/local/bin:/usr/bin:$PATH RAILS_ENV=<%= @env %> <% @environment_variables.each do |k, v| %><%= "#{k}=#{v} " %><% end %> LOG_FILE=/var/log/www/<%= @app_name %>.delayed_job.log/bin/bash -c 'cd /var/www/<%= @app_name %>/current && script/delayed_job stop -i <%= i %>'"
+  start program = "/usr/bin/env RAILS_ENV=<%= @env %> <% @environment_variables.each do |k, v| %><%= "#{k}=#{v} " %><% end %> /bin/bash -c 'cd /var/www/<%= @app_name %>/current && script/delayed_job start -i <%= i %>'"
+  stop program  = "/usr/bin/env RAILS_ENV=<%= @env %> <% @environment_variables.each do |k, v| %><%= "#{k}=#{v} " %><% end %> /bin/bash -c 'cd /var/www/<%= @app_name %>/current && script/delayed_job stop  -i <%= i %>'"
 <% end %>
 
