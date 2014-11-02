@@ -42,8 +42,10 @@ SITE
     yum-epel (0.5.2)
       yum (~> 3.0)
 
-PATH
-  remote: vendor/cookbooks/rails_app
+GIT
+  remote: https://github.com/darrinholst/chef-rails_app
+  ref: master
+  sha: 900bef89b89d6b60d16e164f55337bd3d8150c79
   specs:
     rails_app (0.0.1)
       monit (>= 0.0.0)

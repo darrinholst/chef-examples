@@ -5,5 +5,5 @@ site 'https://supermarket.getchef.com/api/v1'
 cookbook 'git'
 cookbook 'postgresql'
 cookbook 'nginx'
-cookbook 'rails_app', path: 'vendor/cookbooks/rails_app'
+cookbook 'rails_app', git: 'https://github.com/darrinholst/chef-rails_app'
 
