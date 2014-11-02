@@ -12,6 +12,8 @@ define :rails_app do
   server_names = [params[:server_names]].flatten
   primary_server_name = server_names.first
   use_ssl = node["is_vagrant"] ? false : params[:ssl_enabled] || false
+  deploy_to = "/var/www/#{app_name}"
+  shared_dir = "#{deploy_to}/shared"
 
   #-----------------------------------------------------------------------------------
   # dependencies
@@ -190,6 +192,83 @@ define :rails_app do
         :environment_variables => environment_variables
       })
       notifies :restart, "service[monit]"
+    end
+  end
+
+  #-----------------------------------------------------------------------------------
+  # deploy (i.e. the magic)
+  #-----------------------------------------------------------------------------------
+  directory shared_dir do
+    owner app_name
+    group app_name
+  end
+
+  %W{assets bundle pids sockets log system}.each do |dir|
+    directory "#{shared_dir}/#{dir}" do
+      owner app_name
+      group app_name
+    end
+  end
+
+  deploy_revision deploy_to do
+    action params[:action]
+    repo params[:repository]
+    revision params[:revision]
+    user app_name
+    group app_name
+    migrate false #we need some environment variables so we'll do it ourselves before restart
+    ssh_wrapper "/tmp/private_code/deploy-ssh-wrapper.sh"
+    environment("RAILS_ENV" => env)
+    shallow_clone true
+    symlinks("assets" => "public/assets", "pids" => "tmp/pids", "sockets" => "tmp/sockets", "log" => "log", "system" => "public/system")
+    symlink_before_migrate({})
+
+    before_restart do
+      execute "bundle install --path #{deploy_to}/shared/bundle --deployment --without development test" do
+        cwd release_path
+        user app_name
+        environment environment_variables.merge({"LOG_FILE" => "/var/log/www/#{app_name}.chef.log"})
+      end
+
+      execute "bundle exec rake RAILS_ENV=#{env} RAILS_GROUPS=assets assets:precompile:primary" do
+        cwd release_path
+        user app_name
+        group app_name
+        environment environment_variables.merge({"LOG_FILE" => "/var/log/www/#{app_name}.chef.log"})
+      end
+
+      execute "bundle exec rake RAILS_ENV=#{env} db:migrate db:seed --trace" do
+        cwd release_path
+        user app_name
+        group app_name
+        environment environment_variables.merge({"LOG_FILE" => "/var/log/www/#{app_name}.chef.log"})
+      end
+    end
+
+    restart_command do
+      execute "/etc/init.d/#{app_name} restart" do
+      end
+    end
+
+    after_restart do
+      if(params[:delayed_job])
+        bash "monit-reload-restart" do
+          user "root"
+          code "monit reload && monit"
+
+          delayed_job_worker_count.times do |i|
+            code "pidof delayed_job.#{i} | xargs --no-run-if-empty kill"
+          end
+        end
+      end
+
+      ruby_block "check deployed version" do
+        block do
+          all_output = `curl -kvH 'Host: #{primary_server_name}' http#{use_ssl ? 's' : ''}://localhost/version 2>&1`
+          deployed_version = `curl -kH 'Host: #{primary_server_name}' http#{use_ssl ? 's' : ''}://localhost/version`
+          raise "Deployed version #{release_slug}, but #{deployed_version} was returned\n#{all_output}" unless deployed_version.match(release_slug)
+        end
+      end
     end
   end
 end
