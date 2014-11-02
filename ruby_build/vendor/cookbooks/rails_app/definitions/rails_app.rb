@@ -170,5 +170,27 @@ define :rails_app do
     owner app_name
     mode 0600
   end
+
+  #-----------------------------------------------------------------------------------
+  # delayed_job
+  #-----------------------------------------------------------------------------------
+  if params[:delayed_job]
+    include_recipe "monit"
+
+    template "/etc/monit/conf.d/delayed_job.#{app_name}.conf" do
+      source "delayed_job.monitrc.erb"
+      owner "root"
+      group "root"
+      mode 0644
+      variables({
+        :app_name => app_name,
+        :env => env,
+        :worker_count => 1,
+        :worker_name => "#{app_name}_delayed_job",
+        :environment_variables => environment_variables
+      })
+      notifies :restart, "service[monit]"
+    end
+  end
 end
 

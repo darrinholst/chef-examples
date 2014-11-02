@@ -15,6 +15,7 @@ SITE
       windows (>= 0.0.0)
       yum (~> 3.0)
       yum-epel (>= 0.0.0)
+    monit (0.7.5)
     nginx (2.7.4)
       apt (~> 2.2)
       bluepill (~> 2.3)
@@ -44,6 +45,7 @@ PATH
   remote: vendor/cookbooks/rails_app
   specs:
     rails_app (0.0.1)
+      monit (>= 0.0.0)
       nginx (>= 0.0.0)
       postgresql (>= 0.0.0)
 
