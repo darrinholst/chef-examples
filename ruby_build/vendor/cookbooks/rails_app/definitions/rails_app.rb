@@ -30,5 +30,14 @@ define :rails_app do
     group app_name
     mode 0700
   end
+
+  %w{known_hosts}.each do |f|
+    cookbook_file "#{home_dir}/.ssh/#{f}" do
+      source "ssh/#{f}"
+      owner app_name
+      group app_name
+      mode "0600"
+    end
+  end
 end
 
