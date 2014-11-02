@@ -150,5 +150,25 @@ define :rails_app do
     minute 0
     command "/usr/local/bin/backup-postgres -f #{app_name}.dump -d #{database_name} -u #{database_username} -w #{database_password} -t '#{primary_server_name}' -k 365"
   end
+
+  #-----------------------------------------------------------------------------------
+  # deploy key setup
+  #-----------------------------------------------------------------------------------
+  directory "/tmp/private_code/.ssh" do
+    owner app_name
+    recursive true
+  end
+
+  cookbook_file "/tmp/private_code/deploy-ssh-wrapper.sh" do
+    source "ssh/deploy-ssh-wrapper.sh"
+    owner app_name
+    mode 0700
+  end
+
+  cookbook_file "/tmp/private_code/.ssh/id_deploy" do
+    source "ssh/id_deploy"
+    owner app_name
+    mode 0600
+  end
 end
 
